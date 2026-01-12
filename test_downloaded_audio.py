@@ -133,9 +133,9 @@
 from transformers import WhisperProcessor, WhisperForConditionalGeneration
 import torchaudio
 
-# Load fine-tuned Openai whisper-small model and processor from Hugging Face
-model = WhisperForConditionalGeneration.from_pretrained("openai/whisper-small")
-processor = WhisperProcessor.from_pretrained("openai/whisper-small")
+# Load kinya whisper-small model and processor from Hugging Face
+model = WhisperForConditionalGeneration.from_pretrained("benax-rw/KinyaWhisper")
+processor = WhisperProcessor.from_pretrained("benax-rw/KinyaWhisper")
 
 # Load and preprocess audio
 waveform, sample_rate = torchaudio.load("data/audio/sample_2.wav")
