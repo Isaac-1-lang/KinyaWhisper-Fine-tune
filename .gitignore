@@ -1,1 +1,3 @@
 kinya-whisper-model/model.safetensors
+config.bat
+node_modules

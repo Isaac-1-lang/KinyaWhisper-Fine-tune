@@ -130,20 +130,74 @@
 # print("\n🎉 Testing complete!")
 
 
+# from transformers import WhisperProcessor, WhisperForConditionalGeneration
+# import torchaudio
+
+# # Load kinya whisper-small model and processor from Hugging Face
+# model = WhisperForConditionalGeneration.from_pretrained("benax-rw/KinyaWhisper")
+# processor = WhisperProcessor.from_pretrained("benax-rw/KinyaWhisper")
+
+# # Load and preprocess audio
+# waveform, sample_rate = torchaudio.load("data/audio/sample_1.wav")
+# inputs = processor(waveform.squeeze(), sampling_rate=sample_rate, return_tensors="pt")
+
+# # Generate prediction
+# predicted_ids = model.generate(inputs["input_features"])
+# transcription = processor.batch_decode(predicted_ids, skip_special_tokens=True)[0]
+
+# print("🗣️ Transcription:", transcription)
+
+
 from transformers import WhisperProcessor, WhisperForConditionalGeneration
 import torchaudio
+import torch
 
-# Load kinya whisper-small model and processor from Hugging Face
-model = WhisperForConditionalGeneration.from_pretrained("benax-rw/KinyaWhisper")
-processor = WhisperProcessor.from_pretrained("benax-rw/KinyaWhisper")
+MODEL_NAME = "mbazaNLP/Whisper-Small-Kinyarwanda"
 
-# Load and preprocess audio
-waveform, sample_rate = torchaudio.load("data/audio/sample_2.wav")
-inputs = processor(waveform.squeeze(), sampling_rate=sample_rate, return_tensors="pt")
+# Load model + processor
+processor = WhisperProcessor.from_pretrained(MODEL_NAME)
+model = WhisperForConditionalGeneration.from_pretrained(MODEL_NAME)
+model.eval()
 
-# Generate prediction
-predicted_ids = model.generate(inputs["input_features"])
-transcription = processor.batch_decode(predicted_ids, skip_special_tokens=True)[0]
+# Load audio
+waveform, sample_rate = torchaudio.load("data/audio/sample_1.wav")
+
+# Convert to mono
+if waveform.shape[0] > 1:
+    waveform = waveform.mean(dim=0)
+
+# Resample to 16kHz (VERY IMPORTANT)
+if sample_rate != 16000:
+    resampler = torchaudio.transforms.Resample(sample_rate, 16000)
+    waveform = resampler(waveform)
+    sample_rate = 16000
+
+# Prepare input
+inputs = processor(
+    waveform,
+    sampling_rate=sample_rate,
+    return_tensors="pt"
+)
+
+# Force Kinyarwanda transcription
+forced_ids = processor.get_decoder_prompt_ids(
+    language="rw",
+    task="transcribe"
+)
+
+# Generate
+with torch.no_grad():
+    predicted_ids = model.generate(
+        inputs["input_features"],
+        forced_decoder_ids=forced_ids
+    )
+
+# Decode
+transcription = processor.batch_decode(
+    predicted_ids,
+    skip_special_tokens=True
+)[0]
 
 print("🗣️ Transcription:", transcription)
+
 
